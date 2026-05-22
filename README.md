@@ -61,10 +61,10 @@ docker-compose up --build
 
 ### 3. Загрузить данные (ETL)
 
-Положи `netflix_titles.csv` в папку `etl/`, затем:
+Положи `netflix.csv` в папку `etl/`, затем:
 
 ```bash
-docker-compose exec backend python /etl/load.py --csv /etl/netflix_titles.csv
+docker-compose exec backend python /etl/load.py --csv /etl/netflix.csv
 ```
 
 ---

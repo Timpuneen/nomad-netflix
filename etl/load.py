@@ -1,8 +1,8 @@
 """
-ETL: загружает netflix_titles.csv в PostgreSQL.
+ETL: загружает netflix.csv в PostgreSQL.
 
 Запуск (внутри контейнера backend или локально):
-    python etl/load.py --csv /path/to/netflix_titles.csv
+    python etl/load.py --csv /path/to/netflix.csv
 """
 import argparse
 import sys
@@ -104,6 +104,6 @@ def run(csv_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", required=True, help="Путь к netflix_titles.csv")
+    parser.add_argument("--csv", required=True, help="Путь к netflix.csv")
     args = parser.parse_args()
     run(args.csv)
