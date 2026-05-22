@@ -26,7 +26,11 @@ def register_user(db: Session, data: UserCreate) -> User:
 
 
 def authenticate_user(db: Session, username: str, password: str) -> str:
-    user = db.query(User).filter(User.username == username, User.is_deleted == False).first()
+    # Allow login by username or email
+    user = db.query(User).filter(
+        (User.username == username) | (User.email == username),
+        User.is_deleted == False,
+    ).first()
 
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(

@@ -6,6 +6,35 @@
 
 ---
 
+## О датасете
+
+Датасет — **Netflix Movies and TV Shows** (публично доступен на [Kaggle](https://www.kaggle.com/datasets/shivamb/netflix-shows)).
+
+Содержит ~8 800 записей о фильмах и сериалах, доступных на Netflix по состоянию на 2021 год.
+
+| Колонка | Тип | Описание |
+|---|---|---|
+| `show_id` | string | Уникальный ID тайтла |
+| `type` | string | Тип контента: `Movie` или `TV Show` |
+| `title` | string | Название |
+| `director` | string | Режиссёр(ы), через запятую. Может быть пустым |
+| `cast` | string | Актёрский состав, через запятую. Может быть пустым |
+| `country` | string | Страна(ы) производства, через запятую |
+| `date_added` | string | Дата добавления на Netflix (напр. `September 9, 2019`) |
+| `release_year` | int | Год выхода |
+| `rating` | string | Возрастной рейтинг: `TV-MA`, `PG-13`, `R`, `TV-Y` и др. |
+| `duration` | string | Длительность: `90 min` для фильмов, `1 Season` для сериалов |
+| `listed_in` | string | Жанры, через запятую (напр. `Comedies, Dramas`) |
+| `description` | string | Краткое описание |
+
+**Особенности:**
+- Поля `director`, `cast`, `country` могут содержать несколько значений через запятую — ETL нормализует `country` и `listed_in` в отдельные таблицы
+- Около 10–15% записей имеют пустые поля `director` и/или `country`
+- `show_id` хранится как строка для надёжности при импорте
+
+---
+
+
 ## Структура проекта
 
 ```

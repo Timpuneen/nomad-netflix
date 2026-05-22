@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTitles, getGenres, getCountries, getRatings, TitleFilters } from "../api/titles";
 import { useAuthStore } from "../store/authStore";
@@ -11,6 +11,7 @@ export default function BrowsePage() {
 
   const [filters, setFilters] = useState<TitleFilters>({ page: 1, page_size: 20 });
   const [search, setSearch] = useState("");
+  const [yearInput, setYearInput] = useState("");
 
   const [titles, setTitles] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -20,17 +21,24 @@ export default function BrowsePage() {
   const [countries, setCountries] = useState<{ id: number; name: string }[]>([]);
   const [ratings, setRatings] = useState<string[]>([]);
 
-  // Load filter options once
+  // Track select values for controlled reset
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedRating, setSelectedRating] = useState("");
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     getGenres().then(setGenres).catch(console.error);
     getCountries().then(setCountries).catch(console.error);
     getRatings().then(setRatings).catch(console.error);
   }, []);
 
-  const fetchTitles = useCallback(async () => {
+  const fetchTitles = useCallback(async (f: TitleFilters) => {
     setLoading(true);
     try {
-      const data = await getTitles(filters);
+      const data = await getTitles(f);
       setTitles(data.results);
       setTotal(data.total);
     } catch {
@@ -38,23 +46,35 @@ export default function BrowsePage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, []);
 
-  useEffect(() => { fetchTitles(); }, [fetchTitles]);
+  useEffect(() => { fetchTitles(filters); }, [filters, fetchTitles]);
 
-  const handleSearch = () => {
-    setFilters((f) => ({ ...f, search: search || undefined, page: 1 }));
+  // Debounced search — fires 500ms after user stops typing
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setFilters((f) => ({ ...f, search: value.trim() || undefined, page: 1 }));
+    }, 500);
   };
 
   const handleFilter = (key: keyof TitleFilters, value: string) => {
     setFilters((f) => ({ ...f, [key]: value || undefined, page: 1 }));
   };
 
+  const handleYearChange = (value: string) => {
+    setYearInput(value);
+    // Only apply filter when 4 digits entered or field cleared
+    if (value === "" || /^\d{4}$/.test(value)) {
+      setFilters((f) => ({ ...f, release_year: value ? parseInt(value) : undefined, page: 1 }));
+    }
+  };
+
   const totalPages = Math.ceil(total / (filters.page_size || 20));
 
   return (
     <div style={styles.page}>
-      {/* Header */}
       <header style={styles.header}>
         <h1 style={styles.logo}>🎬 Netflix Browser</h1>
         <button style={styles.logoutBtn} onClick={() => { logout(); navigate("/login"); }}>
@@ -62,56 +82,89 @@ export default function BrowsePage() {
         </button>
       </header>
 
-      {/* Search bar */}
+      {/* Search bar — debounced */}
       <div style={styles.searchRow}>
         <input
           style={styles.searchInput}
           placeholder="Поиск по названию, режиссёру, актёрам..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          onChange={(e) => handleSearchChange(e.target.value)}
         />
-        <button style={styles.searchBtn} onClick={handleSearch}>Найти</button>
+        {loading && <span style={styles.loadingDot}>⏳</span>}
       </div>
 
       {/* Filters */}
       <div style={styles.filtersRow}>
-        <select style={styles.select} onChange={(e) => handleFilter("type", e.target.value)}>
-          <option value="">Тип</option>
+        <select
+          style={styles.select}
+          value={selectedType}
+          onChange={(e) => { setSelectedType(e.target.value); handleFilter("type", e.target.value); }}
+        >
+          <option value="">Все типы</option>
           {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
 
-        <select style={styles.select} onChange={(e) => handleFilter("genre", e.target.value)}>
-          <option value="">Жанр</option>
+        <select
+          style={styles.select}
+          value={selectedGenre}
+          onChange={(e) => { setSelectedGenre(e.target.value); handleFilter("genre", e.target.value); }}
+        >
+          <option value="">Все жанры</option>
           {genres.map((g) => <option key={g.id} value={g.name}>{g.name}</option>)}
         </select>
 
-        <select style={styles.select} onChange={(e) => handleFilter("country", e.target.value)}>
-          <option value="">Страна</option>
+        <select
+          style={styles.select}
+          value={selectedCountry}
+          onChange={(e) => { setSelectedCountry(e.target.value); handleFilter("country", e.target.value); }}
+        >
+          <option value="">Все страны</option>
           {countries.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
 
-        <select style={styles.select} onChange={(e) => handleFilter("rating", e.target.value)}>
-          <option value="">Рейтинг</option>
+        <select
+          style={styles.select}
+          value={selectedRating}
+          onChange={(e) => { setSelectedRating(e.target.value); handleFilter("rating", e.target.value); }}
+        >
+          <option value="">Все рейтинги</option>
           {ratings.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
 
+        {/* Year — no spinners, manual input only */}
         <input
-          style={{ ...styles.select, width: "120px" }}
-          type="number"
+          style={{ ...styles.select, width: "90px" }}
+          type="text"
+          inputMode="numeric"
           placeholder="Год"
-          min={1900}
-          max={2030}
-          onChange={(e) => handleFilter("release_year", e.target.value)}
+          maxLength={4}
+          value={yearInput}
+          onChange={(e) => handleYearChange(e.target.value.replace(/\D/g, ""))}
         />
+
+        {/* Reset all filters */}
+        {(selectedType || selectedGenre || selectedCountry || selectedRating || yearInput || search) && (
+          <button
+            style={styles.resetBtn}
+            onClick={() => {
+              setSearch("");
+              setYearInput("");
+              setSelectedType("");
+              setSelectedGenre("");
+              setSelectedCountry("");
+              setSelectedRating("");
+              setFilters({ page: 1, page_size: 20 });
+            }}
+          >
+            ✕ Сбросить
+          </button>
+        )}
       </div>
 
-      {/* Results count */}
       <p style={styles.count}>
         {loading ? "Загружаем..." : `Найдено: ${total}`}
       </p>
 
-      {/* Grid */}
       <div style={styles.grid}>
         {titles.map((t) => (
           <div
@@ -130,7 +183,6 @@ export default function BrowsePage() {
         ))}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div style={styles.pagination}>
           <button
@@ -138,9 +190,7 @@ export default function BrowsePage() {
             disabled={filters.page === 1}
             onClick={() => setFilters((f) => ({ ...f, page: (f.page || 1) - 1 }))}
           >← Назад</button>
-          <span style={{ color: "#999" }}>
-            Стр. {filters.page} из {totalPages}
-          </span>
+          <span style={{ color: "#999" }}>Стр. {filters.page} из {totalPages}</span>
           <button
             style={styles.pageBtn}
             disabled={filters.page === totalPages}
@@ -164,35 +214,35 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "0.4rem 1rem", borderRadius: "6px", cursor: "pointer",
   },
   searchRow: {
-    display: "flex", gap: "0.75rem", padding: "1.5rem 2rem 0.5rem",
+    display: "flex", alignItems: "center", gap: "0.75rem",
+    padding: "1.5rem 2rem 0.5rem",
   },
   searchInput: {
     flex: 1, padding: "0.75rem 1rem", borderRadius: "6px",
     border: "1px solid #333", background: "#1f1f1f", color: "#fff", fontSize: "1rem",
   },
-  searchBtn: {
-    padding: "0.75rem 1.5rem", background: "#e50914", color: "#fff",
-    border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: 600,
-  },
+  loadingDot: { fontSize: "1.2rem" },
   filtersRow: {
-    display: "flex", gap: "0.75rem", padding: "0.75rem 2rem",
-    flexWrap: "wrap",
+    display: "flex", gap: "0.75rem", padding: "0.75rem 2rem", flexWrap: "wrap",
+    alignItems: "center",
   },
   select: {
     padding: "0.6rem 0.8rem", borderRadius: "6px", border: "1px solid #333",
     background: "#1f1f1f", color: "#ccc", fontSize: "0.9rem", cursor: "pointer",
   },
+  resetBtn: {
+    padding: "0.6rem 1rem", borderRadius: "6px", border: "1px solid #555",
+    background: "transparent", color: "#aaa", fontSize: "0.85rem", cursor: "pointer",
+  },
   count: { color: "#666", padding: "0 2rem 0.5rem", fontSize: "0.9rem" },
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: "1.25rem",
-    padding: "0 2rem",
+    gap: "1.25rem", padding: "0 2rem",
   },
   card: {
     background: "#1f1f1f", borderRadius: "10px", padding: "1.25rem",
     cursor: "pointer", border: "1px solid #2a2a2a",
-    transition: "border-color 0.2s",
   },
   cardType: {
     display: "inline-block", fontSize: "0.75rem", color: "#e50914",

@@ -34,7 +34,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
             style={styles.input}
-            placeholder="Имя пользователя"
+            placeholder="Логин или Email"
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             required
