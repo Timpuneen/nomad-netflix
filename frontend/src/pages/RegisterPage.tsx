@@ -19,6 +19,7 @@ export default function RegisterPage() {
       navigate("/");
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Ошибка регистрации");
+      setForm((f) => ({ ...f, password: "" }));
     } finally {
       setLoading(false);
     }

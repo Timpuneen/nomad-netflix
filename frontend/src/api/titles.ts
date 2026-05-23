@@ -31,6 +31,8 @@ export interface TitleFilters {
   country?: string;
   rating?: string;
   release_year?: number;
+  year_from?: number;
+  year_to?: number;
   page?: number;
   page_size?: number;
 }

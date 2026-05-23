@@ -18,6 +18,7 @@ export default function LoginPage() {
       navigate("/");
     } catch {
       setError("Неверный логин или пароль");
+      setForm((f) => ({ ...f, password: "" }));
     } finally {
       setLoading(false);
     }
