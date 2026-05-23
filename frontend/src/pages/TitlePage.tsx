@@ -11,9 +11,18 @@ export default function TitlePage() {
   useEffect(() => {
     if (!id) return;
     getTitle(id)
-      .then(setTitle)
+      .then((data) => {
+        if (!data) {
+          navigate("/404", { replace: true });
+        } else {
+          setTitle(data);
+        }
+      })
+      .catch(() => {
+        navigate("/404", { replace: true });
+      })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, navigate]);
 
   if (loading) return <div style={styles.center}><p style={{ color: "#aaa" }}>Загрузка...</p></div>;
   if (!title) return <div style={styles.center}><p style={{ color: "#aaa" }}>Не найдено</p></div>;

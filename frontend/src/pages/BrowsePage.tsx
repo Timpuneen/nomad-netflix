@@ -67,11 +67,17 @@ export default function BrowsePage() {
       const data = await getTitles(f);
       setTitles(data.results);
       setTotal(data.total);
+
+      // Redirect to 404 if page is out of bounds
+      const maxPage = Math.ceil(data.total / (f.page_size || 20));
+      if (f.page && f.page > maxPage && maxPage > 0) {
+        navigate("/404", { replace: true });
+      }
     } catch {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   // Sync filters to URL
   useEffect(() => {
