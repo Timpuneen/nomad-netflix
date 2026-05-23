@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from pydantic import ValidationError
 
 from app.db.session import get_db
 from app.schemas.schemas import Token, UserCreate, UserOut
@@ -13,7 +14,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(data: UserCreate, db: Session = Depends(get_db)):
-    return register_user(db, data)
+    try:
+        return register_user(db, data)
+    except ValidationError as e:
+        # Extract first validation error message
+        error_msg = e.errors()[0]["msg"] if e.errors() else "Validation error"
+        raise HTTPException(status_code=400, detail=error_msg)
 
 
 @router.post("/login", response_model=Token)

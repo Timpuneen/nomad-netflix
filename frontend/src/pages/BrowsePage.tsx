@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getTitles, getGenres, getCountries, getRatings, TitleFilters } from "../api/titles";
 import { useAuthStore } from "../store/authStore";
 
@@ -7,12 +7,39 @@ const TYPES = ["Movie", "TV Show"];
 
 export default function BrowsePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { logout } = useAuthStore();
 
-  const [filters, setFilters] = useState<TitleFilters>({ page: 1, page_size: 20 });
-  const [search, setSearch] = useState("");
-  const [yearFrom, setYearFrom] = useState("");
-  const [yearTo, setYearTo] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Initialize state from URL params
+  const getInitialFilters = (): TitleFilters => {
+    const page = parseInt(searchParams.get("page") || "1");
+    const search = searchParams.get("search") || undefined;
+    const type = searchParams.get("type") || undefined;
+    const genre = searchParams.get("genre") || undefined;
+    const country = searchParams.get("country") || undefined;
+    const rating = searchParams.get("rating") || undefined;
+    const yearFrom = searchParams.get("year_from");
+    const yearTo = searchParams.get("year_to");
+
+    return {
+      page,
+      page_size: 20,
+      search,
+      type,
+      genre,
+      country,
+      rating,
+      year_from: yearFrom ? parseInt(yearFrom) : undefined,
+      year_to: yearTo ? parseInt(yearTo) : undefined,
+    };
+  };
+
+  const [filters, setFilters] = useState<TitleFilters>(getInitialFilters());
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [yearFrom, setYearFrom] = useState(searchParams.get("year_from") || "");
+  const [yearTo, setYearTo] = useState(searchParams.get("year_to") || "");
 
   const [titles, setTitles] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -22,12 +49,11 @@ export default function BrowsePage() {
   const [countries, setCountries] = useState<{ id: number; name: string }[]>([]);
   const [ratings, setRatings] = useState<string[]>([]);
 
-  const [selectedType, setSelectedType] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState("");
-  const [selectedRating, setSelectedRating] = useState("");
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [selectedType, setSelectedType] = useState(searchParams.get("type") || "");
+  const [selectedGenre, setSelectedGenre] = useState(searchParams.get("genre") || "");
+  const [selectedCountry, setSelectedCountry] = useState(searchParams.get("country") || "");
+  const [selectedRating, setSelectedRating] = useState(searchParams.get("rating") || "");
+  const [pageInput, setPageInput] = useState("");
 
   useEffect(() => {
     getGenres().then(setGenres).catch(console.error);
@@ -46,6 +72,21 @@ export default function BrowsePage() {
       setLoading(false);
     }
   }, []);
+
+  // Sync filters to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.page && filters.page > 1) params.set("page", filters.page.toString());
+    if (filters.search) params.set("search", filters.search);
+    if (filters.type) params.set("type", filters.type);
+    if (filters.genre) params.set("genre", filters.genre);
+    if (filters.country) params.set("country", filters.country);
+    if (filters.rating) params.set("rating", filters.rating);
+    if (filters.year_from) params.set("year_from", filters.year_from.toString());
+    if (filters.year_to) params.set("year_to", filters.year_to.toString());
+
+    setSearchParams(params, { replace: true });
+  }, [filters, setSearchParams]);
 
   useEffect(() => { fetchTitles(filters); }, [filters, fetchTitles]);
 
@@ -87,6 +128,19 @@ export default function BrowsePage() {
   };
 
   const totalPages = Math.ceil(total / (filters.page_size || 20));
+
+  const handlePageInput = (value: string) => {
+    const clean = value.replace(/\D/g, "");
+    setPageInput(clean);
+  };
+
+  const goToPage = () => {
+    const page = parseInt(pageInput);
+    if (page >= 1 && page <= totalPages) {
+      setFilters((f) => ({ ...f, page }));
+      setPageInput("");
+    }
+  };
 
   return (
     <div style={styles.page}>
@@ -197,6 +251,20 @@ export default function BrowsePage() {
             ← Назад
           </button>
           <span style={{ color: "#999" }}>Стр. {filters.page} из {totalPages}</span>
+          <div style={styles.pageInputGroup}>
+            <input
+              style={styles.pageInput}
+              type="text"
+              inputMode="numeric"
+              placeholder="№"
+              value={pageInput}
+              onChange={(e) => handlePageInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && goToPage()}
+            />
+            <button style={styles.goBtn} onClick={goToPage} disabled={!pageInput}>
+              →
+            </button>
+          </div>
           <button style={styles.pageBtn} disabled={filters.page === totalPages}
             onClick={() => setFilters((f) => ({ ...f, page: (f.page || 1) + 1 }))}>
             Вперёд →
@@ -272,5 +340,18 @@ const styles: Record<string, React.CSSProperties> = {
   pageBtn: {
     padding: "0.5rem 1.2rem", background: "#1f1f1f", color: "#fff",
     border: "1px solid #333", borderRadius: "6px", cursor: "pointer",
+  },
+  pageInputGroup: {
+    display: "flex", alignItems: "center", gap: "0.5rem",
+  },
+  pageInput: {
+    width: "60px", padding: "0.5rem", borderRadius: "6px",
+    border: "1px solid #333", background: "#1f1f1f", color: "#ccc",
+    fontSize: "0.9rem", textAlign: "center",
+  },
+  goBtn: {
+    padding: "0.5rem 0.8rem", background: "#1f1f1f", color: "#fff",
+    border: "1px solid #333", borderRadius: "6px", cursor: "pointer",
+    fontSize: "1rem",
   },
 };

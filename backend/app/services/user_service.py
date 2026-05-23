@@ -8,11 +8,27 @@ from app.core.security import hash_password, verify_password, create_access_toke
 
 
 def register_user(db: Session, data: UserCreate) -> User:
-    if db.query(User).filter(User.username == data.username, User.is_deleted == False).first():
-        raise HTTPException(status_code=400, detail="Username already taken")
+    # Check for existing username
+    existing_user = db.query(User).filter(
+        User.username == data.username,
+        User.is_deleted == False
+    ).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Username '{data.username}' is already taken"
+        )
 
-    if db.query(User).filter(User.email == data.email, User.is_deleted == False).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+    # Check for existing email
+    existing_email = db.query(User).filter(
+        User.email == data.email,
+        User.is_deleted == False
+    ).first()
+    if existing_email:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Email '{data.email}' is already registered"
+        )
 
     user = User(
         username=data.username,
