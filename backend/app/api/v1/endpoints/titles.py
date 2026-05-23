@@ -25,6 +25,8 @@ def list_titles(
     country: Optional[str] = None,
     rating: Optional[str] = None,
     release_year: Optional[int] = None,
+    year_from: Optional[int] = None,
+    year_to: Optional[int] = None,
     page: int = 1,
     page_size: int = 20,
     db: Session = Depends(get_db),
@@ -37,6 +39,8 @@ def list_titles(
         country=country,
         rating=rating,
         release_year=release_year,
+        year_from=year_from,
+        year_to=year_to,
         page=page,
         page_size=page_size,
     )

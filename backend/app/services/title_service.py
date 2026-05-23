@@ -30,6 +30,12 @@ def get_titles(db: Session, filters: TitleFilters):
     if filters.release_year:
         query = query.filter(Title.release_year == filters.release_year)
 
+    if filters.year_from:
+        query = query.filter(Title.release_year >= filters.year_from)
+
+    if filters.year_to:
+        query = query.filter(Title.release_year <= filters.year_to)
+
     if filters.genre:
         query = query.join(Title.genres).filter(Genre.name.ilike(f"%{filters.genre}%"))
 

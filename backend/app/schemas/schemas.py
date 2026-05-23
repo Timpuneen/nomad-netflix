@@ -78,5 +78,7 @@ class TitleFilters(BaseModel):
     country: Optional[str] = None
     rating: Optional[str] = None
     release_year: Optional[int] = None
+    year_from: Optional[int] = None
+    year_to: Optional[int] = None
     page: int = 1
     page_size: int = 20
