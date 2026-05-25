@@ -265,3 +265,7 @@ Frontend будет доступен на http://localhost:3000
 ## ER Диаграмма
 
 ![ER Диаграмма](https://drive.google.com/uc?export=view&id=1uDvTZI9TDAZv1vPoVgun67UO6QXC7CBc)
+
+## 🎬 Demo
+
+[![Watch demo](https://img.youtube.com/vi/xxQ2XKlFDDs/hqdefault.jpg)](https://youtu.be/xxQ2XKlFDDs)
