@@ -151,36 +151,49 @@ page_size     - размер страницы (default: 20)
 - **macOS:** `brew install postgresql@15 && brew services start postgresql@15`
 - **Linux:** `sudo apt install postgresql postgresql-contrib && sudo systemctl start postgresql`
 
-Создай базу данных:
+### 2. Создание базы данных и пользователя
+
 ```bash
+# Подключись к PostgreSQL
 psql -U postgres
-CREATE DATABASE netflix_db;
-CREATE USER netflix_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE netflix_db TO netflix_user;
+
+# Создай пользователя и базу данных
+CREATE USER netflix_user WITH PASSWORD 'netflix_pass';
+CREATE DATABASE netflix_db OWNER netflix_user;
+
+# Выдай права на схему public (важно!)
+\c netflix_db
+GRANT ALL ON SCHEMA public TO netflix_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO netflix_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO netflix_user;
+
+# Выйди из psql
 \q
 ```
 
-### 2. Настройка окружения
+### 3. Настройка окружения
 
 ```bash
+# Скопируй пример конфигурации
 cp .env.example .env
 ```
 
-Отредактируй `.env`, укажи параметры подключения к БД:
+Отредактируй `.env` — замени `db` на `localhost`:
 ```env
-DATABASE_URL=postgresql://netflix_user:your_password@localhost:5432/netflix_db
-SECRET_KEY=your-secret-key-here
+DATABASE_URL=postgresql://netflix_user:netflix_pass@localhost:5432/netflix_db
+SECRET_KEY=your-super-secret-key-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
 
-### 3. Backend
+### 4. Установка зависимостей Backend
 
-Можно установить зависимости через **pip** или **uv** (быстрее):
+Можно использовать **pip** или **uv** (быстрее):
 
 **Вариант 1: pip**
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Вариант 2: uv** (рекомендуется)
@@ -191,15 +204,36 @@ cd backend
 # Windows: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 uv pip install -r requirements.txt
-# или через pyproject.toml:
-uv sync
+```
 
+### 5. Загрузка данных (ETL)
+
+Положи файл `netflix.csv` в папку `etl/`, затем запусти скрипт:
+
+```bash
+# Из корня проекта
+cd etl
+python load.py --csv netflix.csv
+```
+
+Скрипт автоматически:
+- Создаст все необходимые таблицы
+- Загрузит данные из CSV
+- Нормализует жанры и страны в отдельные таблицы
+- Выведет статистику загрузки
+
+### 6. Запуск Backend
+
+```bash
+cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Backend будет доступен на http://localhost:8000
+Backend будет доступен на:
+- API: http://localhost:8000
+- Swagger docs: http://localhost:8000/docs
 
-### 4. Frontend
+### 7. Запуск Frontend
 
 ```bash
 cd frontend
@@ -208,23 +242,6 @@ npm run dev
 ```
 
 Frontend будет доступен на http://localhost:3000
-
-### 5. Загрузка данных (ETL)
-
-Положи `netflix.csv` в папку `etl/`, затем запусти скрипт загрузки:
-
-```bash
-cd etl
-python load.py --csv netflix.csv
-```
-
-Скрипт:
-- Создаст все необходимые таблицы
-- Загрузит данные из CSV
-- Нормализует жанры и страны в отдельные таблицы
-- Выведет статистику загрузки
-
-**Примечание:** убедись, что переменная `DATABASE_URL` в `.env` корректна перед запуском ETL.
 
 ## ER Диаграмма
 
