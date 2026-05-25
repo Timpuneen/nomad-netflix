@@ -178,12 +178,24 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO netflix_user
 cp .env.example .env
 ```
 
-Отредактируй `.env` — замени `db` на `localhost`:
+Отредактируй `.env`:
+
+**Для локального запуска** — замени `db` на `localhost`:
 ```env
 DATABASE_URL=postgresql://netflix_user:netflix_pass@localhost:5432/netflix_db
 SECRET_KEY=your-super-secret-key-change-in-production
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
+VITE_API_URL=http://localhost:8000
+```
+
+**Для Docker** — оставь как есть:
+```env
+DATABASE_URL=postgresql://netflix_user:netflix_pass@db:5432/netflix_db
+SECRET_KEY=your-super-secret-key-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+VITE_API_URL=http://backend:8000
 ```
 
 ### 4. Установка зависимостей Backend
@@ -221,6 +233,13 @@ python load.py --csv netflix.csv
 - Загрузит данные из CSV
 - Нормализует жанры и страны в отдельные таблицы
 - Выведет статистику загрузки
+
+**Примечание:** Убедись, что установлен `pandas`:
+```bash
+pip install pandas
+# или
+uv pip install pandas
+```
 
 ### 6. Запуск Backend
 
