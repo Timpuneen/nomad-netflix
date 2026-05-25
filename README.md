@@ -1,4 +1,4 @@
-# 🎬 Netflix Browser
+# Netflix Browser
 
 Полноценное приложение для просмотра и фильтрации Netflix-каталога.
 
@@ -10,7 +10,7 @@
 
 Датасет — **Netflix Movies and TV Shows** (публично доступен на [Kaggle](https://www.kaggle.com/datasets/shivamb/netflix-shows)).
 
-Содержит ~8 800 записей о фильмах и сериалах, доступных на Netflix по состоянию на 2021 год.
+Содержит ~6 200 записей о фильмах и сериалах, доступных на Netflix по состоянию на 2021 год.
 
 | Колонка | Тип | Описание |
 |---|---|---|
@@ -144,14 +144,39 @@ page_size     - размер страницы (default: 20)
 
 ## Разработка без Docker
 
+### Backend
+
+Можно установить зависимости через **pip** или **uv** (быстрее):
+
+**Вариант 1: pip**
 ```bash
-# Backend
 cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload
+```
 
-# Frontend
+**Вариант 2: uv** (рекомендуется)
+```bash
+cd backend
+# Установка uv (если ещё не установлен)
+# macOS/Linux: curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+uv pip install -r requirements.txt
+# или через pyproject.toml:
+uv sync
+
+uvicorn app.main:app --reload
+```
+
+### Frontend
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+## ER Диаграмма
+
+![ER Диаграмма](https://drive.google.com/uc?export=view&id=1uDvTZI9TDAZv1vPoVgun67UO6QXC7CBc)
