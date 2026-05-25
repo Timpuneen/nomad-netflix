@@ -7,13 +7,19 @@ ETL: загружает netflix.csv в PostgreSQL.
 import argparse
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-# Убеждаемся что модули бэкенда доступны
-sys.path.append("/app")
+# Добавляем путь к backend для импорта модулей
+# Работает и в Docker (/app), и локально (../backend)
+backend_path = Path(__file__).parent.parent / "backend"
+if backend_path.exists():
+    sys.path.insert(0, str(backend_path))
+else:
+    sys.path.insert(0, "/app")
 
 from app.db.session import Base
 from app.models.user import Title, Genre, Country, title_genres, title_countries
