@@ -142,9 +142,37 @@ page_size     - размер страницы (default: 20)
 
 ---
 
-## Разработка без Docker
+## Ручная установка (без Docker)
 
-### Backend
+### 1. Установка PostgreSQL
+
+Убедись, что PostgreSQL установлен и запущен:
+- **Windows:** скачай с [postgresql.org](https://www.postgresql.org/download/windows/)
+- **macOS:** `brew install postgresql@15 && brew services start postgresql@15`
+- **Linux:** `sudo apt install postgresql postgresql-contrib && sudo systemctl start postgresql`
+
+Создай базу данных:
+```bash
+psql -U postgres
+CREATE DATABASE netflix_db;
+CREATE USER netflix_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE netflix_db TO netflix_user;
+\q
+```
+
+### 2. Настройка окружения
+
+```bash
+cp .env.example .env
+```
+
+Отредактируй `.env`, укажи параметры подключения к БД:
+```env
+DATABASE_URL=postgresql://netflix_user:your_password@localhost:5432/netflix_db
+SECRET_KEY=your-secret-key-here
+```
+
+### 3. Backend
 
 Можно установить зависимости через **pip** или **uv** (быстрее):
 
@@ -152,7 +180,7 @@ page_size     - размер страницы (default: 20)
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Вариант 2: uv** (рекомендуется)
@@ -166,16 +194,37 @@ uv pip install -r requirements.txt
 # или через pyproject.toml:
 uv sync
 
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend
+Backend будет доступен на http://localhost:8000
+
+### 4. Frontend
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+Frontend будет доступен на http://localhost:3000
+
+### 5. Загрузка данных (ETL)
+
+Положи `netflix.csv` в папку `etl/`, затем запусти скрипт загрузки:
+
+```bash
+cd etl
+python load.py --csv netflix.csv
+```
+
+Скрипт:
+- Создаст все необходимые таблицы
+- Загрузит данные из CSV
+- Нормализует жанры и страны в отдельные таблицы
+- Выведет статистику загрузки
+
+**Примечание:** убедись, что переменная `DATABASE_URL` в `.env` корректна перед запуском ETL.
 
 ## ER Диаграмма
 

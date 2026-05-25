@@ -1,3 +1,4 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 
 
@@ -8,7 +9,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     class Config:
-        env_file = ".env"
+        env_file = Path(__file__).parent.parent.parent.parent / ".env"
+        env_file_encoding = "utf-8"
 
 
 settings = Settings()
